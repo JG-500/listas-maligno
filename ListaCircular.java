@@ -1,0 +1,400 @@
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+public class ListaCircular<X> {
+
+    private class No
+    {
+        private X  info;
+        private No prox;
+
+        public No (X i, No p)
+        {
+            this.info = i;
+            this.prox = p;
+        }
+
+        public No (X i)
+        {
+            this.info = i;
+            this.prox = null;
+        }
+
+        public X getInfo ()
+        {
+            return this.info;
+        }
+
+        public No getProx ()
+        {
+            return this.prox;
+        }
+
+        public void setInfo (X i)
+        {
+            this.info = i;
+        }
+
+        public void setProx (No p)
+        {
+            this.prox = p;
+        }
+    } //fim da classe No
+
+    private No primeiro;
+
+    public ListaCircular ()
+    {
+        this.primeiro=null;
+    }
+
+    private X meuCloneDeX (X x)
+    {
+        X ret=null;
+
+        try
+        {
+            Class<?> classe         = x.getClass();
+            Class<?>[] tipoDosParms = null;
+            Method metodo           = classe.getMethod("clone",tipoDosParms);
+            Object[] parms          = null;
+            ret                     = (X)metodo.invoke(x,parms);
+        }
+        catch(NoSuchMethodException erro)
+        {}
+        catch(IllegalAccessException erro)
+        {}
+        catch(InvocationTargetException erro)
+        {}
+
+        return ret;
+    }
+
+    public void guardeUmItemNoInicio (X i) throws Exception
+    {
+        if (i==null)
+            throw new Exception ("Informacao ausente");
+
+        X inserir=null;
+        if (i instanceof Cloneable)
+            inserir = (X)meuCloneDeX(i);
+        else
+            inserir = i;
+            
+        this.primeiro = new No (inserir,this.primeiro);
+    }
+
+    public void guardeUmItemNoFinal (X i) throws Exception
+    {
+        if (i==null)
+            throw new Exception ("Informacao ausente");
+
+        X inserir=null;
+        if (i instanceof Cloneable)
+            inserir = (X)meuCloneDeX(i);
+        else
+            inserir = i;
+            
+        if (this.primeiro==null)
+            this.primeiro = new No (inserir);
+        else
+        {
+            No atual=this.primeiro;
+
+            do{
+                atual = atual.getProx();
+            }
+            while (atual.getProx()!=this.primeiro);
+            atual.setProx(new No (inserir));
+        }
+    }
+    
+    public X recupereItemDoInicio () throws Exception
+    {
+        if (this.primeiro==null)
+            throw new Exception ("Nada a obter");
+
+        X ret = this.primeiro.getInfo();
+        if (ret instanceof Cloneable)
+            ret = meuCloneDeX (ret);
+            
+        return ret;
+    }
+
+    public X recupereItemDoFinal () throws Exception
+    {
+        if (this.primeiro==null)
+            throw new Exception ("Nada a obter");
+
+		No atual=this.primeiro;
+        do{
+            atual = atual.getProx();
+        }
+		while (atual.getProx()!=this.primeiro);
+			
+        X ret = atual.getInfo();
+        if (ret instanceof Cloneable)
+            ret = meuCloneDeX (ret);
+            
+        return ret;
+    }
+
+    public void removaItemDoInicio () throws Exception
+    {
+        if (this.primeiro==null)
+            throw new Exception ("Nada a remover");
+
+        if (this.primeiro.getProx()==null) //so 1 elemento
+        {
+            this.primeiro=null;
+            return;
+        }
+
+        this.primeiro = this.primeiro.getProx();
+        // System.gc();
+    }
+    
+    public void removaItemDoFinal () throws Exception
+    {
+        if (this.primeiro==null)
+            throw new Exception ("Nada a remover");
+
+        if (this.primeiro.getProx()==this.primeiro) //so 1 elemento
+        {
+            this.primeiro=null;
+            return;
+        }
+
+        No atual;
+
+        for (atual=this.primeiro;
+             atual.getProx().getProx()!=this.primeiro;
+             atual=atual.getProx())
+             /*comando vazio*/;
+
+        atual.setProx(this.primeiro);
+    }
+    
+    public int getQuantidade ()
+    {
+        No  atual=this.primeiro;
+        int ret  =0;
+
+        while (atual!=null)
+        {
+            ret++;                
+            atual = atual.getProx();
+        }
+        
+        return ret;
+    }
+
+    public boolean tem (X i) throws Exception
+    {
+        if (i==null)
+            throw new Exception ("Informacao ausente");
+		
+        No atual=this.primeiro;
+
+        do{
+            if (i.equals(atual.getInfo()))
+                return true;
+                
+            atual = atual.getProx();
+        }
+        while (atual!=this.primeiro);
+            
+        
+        return false;
+	}
+	
+	public void removaItemIndicado (X i) throws Exception
+	{
+        if (i==null)
+            throw new Exception ("Informacao ausente");
+
+        boolean removeu=false;
+
+        for(;;) // FOR EVER (repete até break)
+        {
+            if (this.primeiro==null)
+                break;
+
+            if (!i.equals(this.primeiro.getInfo()))
+                break;
+
+            this.primeiro=this.primeiro.getProx();
+
+            removeu=true;
+        }
+
+        if (this.primeiro!=null)
+        {
+            No atual=this.primeiro;
+
+            forever:for(;;) // repete ate break
+            {
+                if (atual.getProx()==this.primeiro)
+                    break;
+
+                while (i.equals(atual.getProx().getInfo()))
+                {
+                    atual.setProx(atual.getProx().getProx());
+
+                    removeu=true;
+
+                    if (atual.getProx()==null)
+                        break forever;
+                }
+
+                atual=atual.getProx();
+            }
+        }
+
+        if (!removeu)
+            throw new Exception ("Informacao inexistente");
+	}	
+	
+	public void removaItemIndicado (int posicao) throws Exception
+	{
+        if (posicao<0)
+            throw new Exception ("Posicao invalida");
+            
+        if (this.primeiro==null)
+            throw new Exception ("Posicao invalida");
+            
+        if (posicao==0)
+        {
+			this.primeiro=this.primeiro.getProx();
+			return;
+		}
+		
+        No atual;
+        int posAtual;
+        for (atual=this.primeiro, posAtual=0;
+             atual.getProx().getProx()!=this.primeiro && posAtual!=posicao-1;
+             atual=atual.getProx(),posAtual++)
+             /*comando vazio*/;
+             
+        if (posAtual!=posicao-1)
+            throw new Exception ("Posicao invalida");
+            
+        atual.setProx(atual.getProx().getProx());
+	}
+
+    public boolean isVazia ()
+    {
+        return this.primeiro==null;
+    }
+    
+    public String toString ()
+    {
+        String ret="[";
+
+        No atual=this.primeiro;
+
+        do{
+            ret=ret+atual.getInfo();
+
+            if (atual.getProx()!=null)
+                ret=ret+",";
+
+            atual=atual.getProx();
+        }
+        while (atual!=this.primeiro);
+
+        return ret+"]";
+    }
+
+    public boolean equals (Object obj)
+    {
+        if (this==obj)
+            return true;
+
+        if (obj==null)
+            return false;
+
+        if (this.getClass()!=obj.getClass())
+            return false;
+
+        ListaCircular<X> lista =
+       (ListaCircular<X>)obj;
+
+        No atualThis =this .primeiro;
+        No atualLista=lista.primeiro;
+
+        do{
+            if (!atualThis.getInfo().equals(atualLista.getInfo()))
+                return false;
+
+            atualThis  = atualThis .getProx();
+            atualLista = atualLista.getProx();
+        }
+        while (atualThis!=this.primeiro && atualLista!=lista.primeiro);
+
+
+        if (atualThis!=this.primeiro  /* && atualLista==null */)
+            return false;
+
+        if (atualLista!=this.primeiro /* && atualThis ==null */)
+            return false;
+
+        // atualThis==null && atualLista==null
+        return true;
+    }
+
+    
+    public int hashCode ()
+    {
+        final int PRIMO = 13; // qualquer número primo serve
+        
+        int ret=666; // qualquer inteiro positivo serve
+        No atual = this.primeiro;
+        do{
+            ret = PRIMO*ret + atual.getInfo().hashCode();
+            atual = atual.getProx();
+        }
+        while(atual != this.primeiro);
+
+        if (ret<0) ret = -ret;
+
+        return ret;
+    }
+    
+    // construtor de copia
+    public ListaCircular (ListaCircular<X> modelo) throws Exception
+    {
+        if (modelo==null)
+            throw new Exception ("Modelo ausente");
+
+        if (modelo.primeiro==null)
+            return; // sai do construtor, pq this.primeiro ja é null
+
+        this.primeiro = new No (modelo.primeiro.getInfo());
+
+        No atualDoThis   = this  .primeiro;
+        No atualDoModelo = modelo.primeiro.getProx();
+
+        do{
+            atualDoThis.setProx (new No (atualDoModelo.getInfo()));
+            atualDoThis   = atualDoThis  .getProx ();
+            atualDoModelo = atualDoModelo.getProx ();
+        }
+        while (atualDoModelo!=modelo.primeiro);
+            
+    }
+
+    public Object clone ()
+    {
+        ListaCircular<X> ret=null;
+
+        try
+        {
+            ret = new ListaCircular (this);
+        }
+        catch (Exception erro)
+        {} // sei que this NUNCA é null e o contrutor de copia da erro quando seu parametro é null
+
+        return ret;
+    }
+}
