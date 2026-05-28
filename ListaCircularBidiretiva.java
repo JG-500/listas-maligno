@@ -1,6 +1,7 @@
 import java.lang.reflect.*;
 
-public class ListaCircularBidiretiva <X> {
+public class ListaCircularBidiretiva<X> {
+
     private class No
     {
         private X  info;
@@ -14,14 +15,12 @@ public class ListaCircularBidiretiva <X> {
             this.ante = a;
         }
 
-        /*
         public No (X i)
         {
             this.info = i;
             this.prox = null;
             this.ante = null;
         }
-        */
 
         public X getInfo ()
         {
@@ -91,15 +90,22 @@ public class ListaCircularBidiretiva <X> {
             inserir = (X)meuCloneDeX(i);
         else
             inserir = i;
+            
 
-        if (this.primeiro == null){
-            this.primeiro = new No (inserir,this.primeiro, this.primeiro);
+        if (this.primeiro == null)
+        {
+            this.primeiro = new No(inserir);
+            this.primeiro.setProx(this.primeiro);
+            this.primeiro.setAnte(this.primeiro);
             return;
         }
-        
-        No velho = this.primeiro;
-        this.primeiro = new No(inserir, this.primeiro, this.primeiro.getAnte());
-        velho.setAnte(this.primeiro);
+
+        No ultimo = this.primeiro.getAnte();
+
+        this.primeiro = new No (inserir,this.primeiro, ultimo);
+        this.primeiro.getProx().setAnte(this.primeiro);
+
+        ultimo.setProx(this.primeiro);
     }
 
     public void guardeUmItemNoFinal (X i) throws Exception
@@ -113,17 +119,17 @@ public class ListaCircularBidiretiva <X> {
         else
             inserir = i;
             
-        if (this.primeiro==null)
-            this.primeiro = new No (inserir, this.primeiro, this.primeiro);
+        if (this.primeiro==null){
+            this.primeiro = new No (inserir);
+            this.primeiro.setProx(this.primeiro);
+            this.primeiro.setAnte(this.primeiro);
+        }
         else
         {
-            No atual=this.primeiro;
+            No ultimo=this.primeiro.getAnte();
 
-            do{
-                atual=atual.getProx();
-            }
-            while (atual.getProx()!=null);
-            atual.setProx(new No (inserir,this.primeiro,atual));
+            ultimo.setProx(new No (inserir, this.primeiro, ultimo));
+            this.primeiro.setAnte(ultimo.getProx());
         }
     }
     
@@ -144,11 +150,9 @@ public class ListaCircularBidiretiva <X> {
         if (this.primeiro==null)
             throw new Exception ("Nada a obter");
 
-		No atual=this.primeiro;
-		while (atual.getProx()!=null)
-			atual=atual.getProx();
+		No ultimo=this.primeiro.getAnte();
 			
-        X ret = atual.getInfo();
+        X ret = ultimo.getInfo();
         if (ret instanceof Cloneable)
             ret = meuCloneDeX (ret);
             
@@ -160,13 +164,18 @@ public class ListaCircularBidiretiva <X> {
         if (this.primeiro==null)
             throw new Exception ("Nada a remover");
 
-        if (this.primeiro.getProx()==null) //so 1 elemento
+        if (this.primeiro.getProx()==this.primeiro) //so 1 elemento
         {
             this.primeiro=null;
             return;
         }
 
+        No ultimo = this.primeiro.getAnte();
+
         this.primeiro = this.primeiro.getProx();
+
+        this.primeiro.setAnte(ultimo);
+        ultimo.setProx(this.primeiro);
         // System.gc();
     }
     
@@ -175,31 +184,31 @@ public class ListaCircularBidiretiva <X> {
         if (this.primeiro==null)
             throw new Exception ("Nada a remover");
 
-        if (this.primeiro.getProx()==null) //so 1 elemento
+        if (this.primeiro.getProx()==this.primeiro) //so 1 elemento
         {
             this.primeiro=null;
             return;
         }
 
-        No atual;
-        for (atual=this.primeiro;
-             atual.getProx().getProx()!=null;
-             atual=atual.getProx())
-             /*comando vazio*/;
+        No ultimo = this.primeiro.getAnte().getAnte();
 
-        atual.setProx(null);
+        this.primeiro.setAnte(ultimo);
+        ultimo.setProx(this.primeiro);
     }
     
     public int getQuantidade ()
-    {
+    {   
+        if (this.primeiro == null) return 0;
+
         No  atual=this.primeiro;
         int ret  =0;
 
-        while (atual!=null)
-        {
+        do{
             ret++;                
             atual = atual.getProx();
         }
+        while (atual!=this.primeiro);
+        
         
         return ret;
     }
@@ -208,16 +217,19 @@ public class ListaCircularBidiretiva <X> {
     {
         if (i==null)
             throw new Exception ("Informacao ausente");
-		
+
+        if (this.primeiro == null) return false;
+
         No atual=this.primeiro;
 
-        while (atual!=null)
-        {
+        do{
             if (i.equals(atual.getInfo()))
                 return true;
                 
             atual = atual.getProx();
         }
+        while (atual!=this.primeiro);
+            
         
         return false;
 	}
@@ -230,14 +242,25 @@ public class ListaCircularBidiretiva <X> {
         boolean removeu=false;
 
         for(;;) // FOR EVER (repete até break)
-        {
+        {   
             if (this.primeiro==null)
                 break;
 
             if (!i.equals(this.primeiro.getInfo()))
                 break;
 
+            if (this.primeiro.getProx() == this.primeiro){
+                this.primeiro = null;
+                removeu = true;
+                break;
+            }
+
+            No ultimo = this.primeiro.getAnte();
+
             this.primeiro=this.primeiro.getProx();
+
+            ultimo.setProx(this.primeiro);
+            this.primeiro.setAnte(ultimo);
 
             removeu=true;
         }
@@ -248,16 +271,17 @@ public class ListaCircularBidiretiva <X> {
 
             forever:for(;;) // repete ate break
             {
-                if (atual.getProx()==null)
+                if (atual.getProx()==this.primeiro)
                     break;
 
                 while (i.equals(atual.getProx().getInfo()))
                 {
                     atual.setProx(atual.getProx().getProx());
+                    atual.getProx().setAnte(atual);
 
                     removeu=true;
 
-                    if (atual.getProx()==null)
+                    if (atual.getProx()==this.primeiro)
                         break forever;
                 }
 
@@ -279,14 +303,22 @@ public class ListaCircularBidiretiva <X> {
             
         if (posicao==0)
         {
+            if (this.primeiro.getProx() == this.primeiro) {
+                this.primeiro = null;
+                return;
+            }
+            No ultimo = this.primeiro.getAnte();
+
 			this.primeiro=this.primeiro.getProx();
+            ultimo.setProx(this.primeiro);
+            this.primeiro.setAnte(ultimo);
 			return;
 		}
 		
         No atual;
         int posAtual;
         for (atual=this.primeiro, posAtual=0;
-             atual.getProx().getProx()!=null && posAtual!=posicao-1;
+             atual.getProx().getProx()!=this.primeiro && posAtual!=posicao-1;
              atual=atual.getProx(),posAtual++)
              /*comando vazio*/;
              
@@ -294,6 +326,7 @@ public class ListaCircularBidiretiva <X> {
             throw new Exception ("Posicao invalida");
             
         atual.setProx(atual.getProx().getProx());
+        atual.getProx().setAnte(atual);
 	}
 
     public boolean isVazia ()
@@ -302,20 +335,22 @@ public class ListaCircularBidiretiva <X> {
     }
     
     public String toString ()
-    {
+    {   
+        if (this.primeiro == null) return "[]";
+
         String ret="[";
 
         No atual=this.primeiro;
 
-        while (atual!=null)
-        {
+        do{
             ret=ret+atual.getInfo();
 
-            if (atual.getProx()!=null)
+            if (atual.getProx()!=this.primeiro)
                 ret=ret+",";
 
             atual=atual.getProx();
         }
+        while (atual!=this.primeiro);
 
         return ret+"]";
     }
@@ -337,19 +372,22 @@ public class ListaCircularBidiretiva <X> {
         No atualThis =this .primeiro;
         No atualLista=lista.primeiro;
 
-        while (atualThis!=null && atualLista!=null)
-        {
-            if (!atualThis.getInfo().equals(atualLista.getInfo()))
-                return false;
+        if (this.primeiro == null && lista.primeiro == null) return true; // se ambos forem vazios eles são iguais
+        if (this.primeiro == null || lista.primeiro == null) return false; // mas se passou daquela linha e algum deles for null n são iguais xd
+
+        do{
+            if (!atualThis.getInfo().equals(atualLista.getInfo())) return false;
 
             atualThis  = atualThis .getProx();
             atualLista = atualLista.getProx();
         }
+        while (atualThis!=this.primeiro && atualLista!=lista.primeiro);
 
-        if (atualThis!=null  /* && atualLista==null */)
+
+        if (atualThis!=this.primeiro  /* && atualLista==null */)
             return false;
 
-        if (atualLista!=null /* && atualThis ==null */)
+        if (atualLista!=lista.primeiro /* && atualThis ==null */)
             return false;
 
         // atualThis==null && atualLista==null
@@ -363,10 +401,14 @@ public class ListaCircularBidiretiva <X> {
         
         int ret=666; // qualquer inteiro positivo serve
 
-        for (No atual=this.primeiro;
-             atual!=null;
-             atual=atual.getProx())
-             ret = PRIMO*ret + atual.getInfo().hashCode();
+        if (this.primeiro == null) return ret;
+
+        No atual = this.primeiro;
+        do{
+            ret = PRIMO*ret + atual.getInfo().hashCode();
+            atual = atual.getProx();
+        }
+        while(atual != this.primeiro);
 
         if (ret<0) ret = -ret;
 
@@ -387,12 +429,15 @@ public class ListaCircularBidiretiva <X> {
         No atualDoThis   = this  .primeiro;
         No atualDoModelo = modelo.primeiro.getProx();
 
-        while (atualDoModelo!=null)
-        {
+        while (atualDoModelo!=modelo.primeiro){
             atualDoThis.setProx (new No (atualDoModelo.getInfo()));
+            atualDoThis.getProx().setAnte(atualDoThis);
             atualDoThis   = atualDoThis  .getProx ();
             atualDoModelo = atualDoModelo.getProx ();
         }
+
+        atualDoThis.setProx(this.primeiro);
+        this.primeiro.setAnte(atualDoThis);
     }
 
     public Object clone ()
