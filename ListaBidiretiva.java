@@ -90,8 +90,14 @@ public class ListaBidiretiva <X>
             inserir = (X)meuCloneDeX(i);
         else
             inserir = i;
-            
-        this.primeiro = new No (inserir,this.primeiro, null);
+        
+        if (this.primeiro == null){
+            this.primeiro = new No (inserir);
+            return;
+        }
+        No atual = this.primeiro;
+        this.primeiro = new No(inserir, this.primeiro, null);
+        atual.setAnte(this.primeiro);   
     }
 
     public void guardeUmItemNoFinal (X i) throws Exception
@@ -156,6 +162,7 @@ public class ListaBidiretiva <X>
         }
 
         this.primeiro = this.primeiro.getProx();
+        this.primeiro.setAnte(null);
         // System.gc();
     }
     
@@ -227,8 +234,8 @@ public class ListaBidiretiva <X>
             if (!i.equals(this.primeiro.getInfo()))
                 break;
 
-            this.primeiro.setAnte(null);
             this.primeiro=this.primeiro.getProx();
+            if (this.primeiro != null) this.primeiro.setAnte(null);
 
             removeu=true;
         }
@@ -245,7 +252,7 @@ public class ListaBidiretiva <X>
                 while (i.equals(atual.getProx().getInfo()))
                 {
                     atual.setProx(atual.getProx().getProx());
-                    atual.getProx().setAnte(atual);
+                    if (atual.getProx() != null) atual.getProx().setAnte(atual);
 
                     removeu=true;
 
@@ -272,6 +279,7 @@ public class ListaBidiretiva <X>
         if (posicao==0)
         {
 			this.primeiro=this.primeiro.getProx();
+            if (this.primeiro != null) this.primeiro.setAnte(null);
 			return;
 		}
 		
@@ -286,7 +294,7 @@ public class ListaBidiretiva <X>
             throw new Exception ("Posicao invalida");
             
         atual.setProx(atual.getProx().getProx());
-        atual.getProx().setAnte(atual);
+        if (atual.getProx() != null) atual.getProx().setAnte(atual);
 	}
 
     public boolean isVazia ()
@@ -383,6 +391,8 @@ public class ListaBidiretiva <X>
         while (atualDoModelo!=null)
         {
             atualDoThis.setProx (new No (atualDoModelo.getInfo()));
+            atualDoThis.getProx().setAnte(atualDoThis);
+
             atualDoThis   = atualDoThis  .getProx ();
             atualDoModelo = atualDoModelo.getProx ();
         }

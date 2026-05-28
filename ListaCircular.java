@@ -1,5 +1,4 @@
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 
 public class ListaCircular<X> {
 
@@ -81,7 +80,23 @@ public class ListaCircular<X> {
         else
             inserir = i;
             
+
+        if (this.primeiro == null)
+        {
+            this.primeiro = new No(inserir);
+            this.primeiro.setProx(this.primeiro);
+            return;
+        }
+
+        No ultimo = this.primeiro;
+
+        while (ultimo.getProx() != this.primeiro){
+            ultimo = ultimo.getProx();
+        }
+
         this.primeiro = new No (inserir,this.primeiro);
+
+        ultimo.setProx(this.primeiro);
     }
 
     public void guardeUmItemNoFinal (X i) throws Exception
@@ -95,17 +110,17 @@ public class ListaCircular<X> {
         else
             inserir = i;
             
-        if (this.primeiro==null)
+        if (this.primeiro==null){
             this.primeiro = new No (inserir);
+            this.primeiro.setProx(this.primeiro);
+        }
         else
         {
             No atual=this.primeiro;
 
-            do{
+            while (atual.getProx() != this.primeiro)
                 atual = atual.getProx();
-            }
-            while (atual.getProx()!=this.primeiro);
-            atual.setProx(new No (inserir));
+            atual.setProx(new No (inserir, this.primeiro));
         }
     }
     
@@ -144,13 +159,20 @@ public class ListaCircular<X> {
         if (this.primeiro==null)
             throw new Exception ("Nada a remover");
 
-        if (this.primeiro.getProx()==null) //so 1 elemento
+        if (this.primeiro.getProx()==this.primeiro) //so 1 elemento
         {
             this.primeiro=null;
             return;
         }
 
+        No ultimo = this.primeiro;
+
+        while (ultimo.getProx() != this.primeiro)
+            ultimo = ultimo.getProx();
+
         this.primeiro = this.primeiro.getProx();
+
+        ultimo.setProx(this.primeiro);
         // System.gc();
     }
     
@@ -176,15 +198,18 @@ public class ListaCircular<X> {
     }
     
     public int getQuantidade ()
-    {
+    {   
+        if (this.primeiro == null) return 0;
+
         No  atual=this.primeiro;
         int ret  =0;
 
-        while (atual!=null)
-        {
+        do{
             ret++;                
             atual = atual.getProx();
         }
+        while (atual!=this.primeiro);
+        
         
         return ret;
     }
@@ -193,7 +218,9 @@ public class ListaCircular<X> {
     {
         if (i==null)
             throw new Exception ("Informacao ausente");
-		
+
+        if (this.primeiro == null) return false;
+
         No atual=this.primeiro;
 
         do{
@@ -216,14 +243,28 @@ public class ListaCircular<X> {
         boolean removeu=false;
 
         for(;;) // FOR EVER (repete até break)
-        {
+        {   
             if (this.primeiro==null)
                 break;
 
             if (!i.equals(this.primeiro.getInfo()))
                 break;
 
+            if (this.primeiro.getProx() == this.primeiro){
+                this.primeiro = null;
+                removeu = true;
+                break;
+            }
+
+            No ultimo;
+            for (ultimo = this.primeiro; 
+                ultimo.getProx() != this.primeiro;
+                ultimo = ultimo.getProx())
+                /* Comando vazio */;
+
             this.primeiro=this.primeiro.getProx();
+
+            ultimo.setProx(this.primeiro);
 
             removeu=true;
         }
@@ -243,7 +284,7 @@ public class ListaCircular<X> {
 
                     removeu=true;
 
-                    if (atual.getProx()==null)
+                    if (atual.getProx()==this.primeiro)
                         break forever;
                 }
 
@@ -265,7 +306,16 @@ public class ListaCircular<X> {
             
         if (posicao==0)
         {
+            if (this.primeiro.getProx() == this.primeiro) {
+                this.primeiro = null;
+                return;
+            }
+            No ultimo = this.primeiro;
+            while (ultimo.getProx() != this.primeiro) ultimo = ultimo.getProx();
+
 			this.primeiro=this.primeiro.getProx();
+            ultimo.setProx(this.primeiro);
+
 			return;
 		}
 		
@@ -288,7 +338,9 @@ public class ListaCircular<X> {
     }
     
     public String toString ()
-    {
+    {   
+        if (this.primeiro == null) return "[]";
+
         String ret="[";
 
         No atual=this.primeiro;
@@ -296,7 +348,7 @@ public class ListaCircular<X> {
         do{
             ret=ret+atual.getInfo();
 
-            if (atual.getProx()!=null)
+            if (atual.getProx()!=this.primeiro)
                 ret=ret+",";
 
             atual=atual.getProx();
@@ -323,9 +375,11 @@ public class ListaCircular<X> {
         No atualThis =this .primeiro;
         No atualLista=lista.primeiro;
 
+        if (this.primeiro == null && lista.primeiro == null) return true; // se ambos forem vazios eles são iguais
+        if (this.primeiro == null || lista.primeiro == null) return false; // mas se passou daquela linha e algum deles for null n são iguais xd
+
         do{
-            if (!atualThis.getInfo().equals(atualLista.getInfo()))
-                return false;
+            if (!atualThis.getInfo().equals(atualLista.getInfo())) return false;
 
             atualThis  = atualThis .getProx();
             atualLista = atualLista.getProx();
@@ -336,7 +390,7 @@ public class ListaCircular<X> {
         if (atualThis!=this.primeiro  /* && atualLista==null */)
             return false;
 
-        if (atualLista!=this.primeiro /* && atualThis ==null */)
+        if (atualLista!=lista.primeiro /* && atualThis ==null */)
             return false;
 
         // atualThis==null && atualLista==null
@@ -349,6 +403,9 @@ public class ListaCircular<X> {
         final int PRIMO = 13; // qualquer número primo serve
         
         int ret=666; // qualquer inteiro positivo serve
+
+        if (this.primeiro == null) return ret;
+
         No atual = this.primeiro;
         do{
             ret = PRIMO*ret + atual.getInfo().hashCode();
@@ -375,13 +432,13 @@ public class ListaCircular<X> {
         No atualDoThis   = this  .primeiro;
         No atualDoModelo = modelo.primeiro.getProx();
 
-        do{
+        while (atualDoModelo!=modelo.primeiro){
             atualDoThis.setProx (new No (atualDoModelo.getInfo()));
             atualDoThis   = atualDoThis  .getProx ();
             atualDoModelo = atualDoModelo.getProx ();
         }
-        while (atualDoModelo!=modelo.primeiro);
-            
+
+        atualDoThis.setProx(this.primeiro);
     }
 
     public Object clone ()

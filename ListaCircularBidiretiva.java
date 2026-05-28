@@ -14,12 +14,14 @@ public class ListaCircularBidiretiva <X> {
             this.ante = a;
         }
 
+        /*
         public No (X i)
         {
             this.info = i;
             this.prox = null;
             this.ante = null;
         }
+        */
 
         public X getInfo ()
         {
@@ -89,13 +91,15 @@ public class ListaCircularBidiretiva <X> {
             inserir = (X)meuCloneDeX(i);
         else
             inserir = i;
-        
-        if (this.primeiro == null)
-            this.primeiro = new No (inserir,this.primeiro, this.primeiro);
 
-        No ultimo = this.primeiro;
+        if (this.primeiro == null){
+            this.primeiro = new No (inserir,this.primeiro, this.primeiro);
+            return;
+        }
+        
+        No velho = this.primeiro;
         this.primeiro = new No(inserir, this.primeiro, this.primeiro.getAnte());
-        ultimo.setAnte(this.primeiro);
+        velho.setAnte(this.primeiro);
     }
 
     public void guardeUmItemNoFinal (X i) throws Exception
@@ -114,9 +118,12 @@ public class ListaCircularBidiretiva <X> {
         else
         {
             No atual=this.primeiro;
-            while (atual.getProx()!=this.primeiro)
+
+            do{
                 atual=atual.getProx();
-            atual.setProx(new No (inserir, this.primeiro, atual));
+            }
+            while (atual.getProx()!=null);
+            atual.setProx(new No (inserir,this.primeiro,atual));
         }
     }
     
@@ -138,7 +145,7 @@ public class ListaCircularBidiretiva <X> {
             throw new Exception ("Nada a obter");
 
 		No atual=this.primeiro;
-		while (atual.getProx()!=this.primeiro)
+		while (atual.getProx()!=null)
 			atual=atual.getProx();
 			
         X ret = atual.getInfo();
@@ -153,14 +160,13 @@ public class ListaCircularBidiretiva <X> {
         if (this.primeiro==null)
             throw new Exception ("Nada a remover");
 
-        if (this.primeiro.getProx()==this.primeiro) //so 1 elemento
+        if (this.primeiro.getProx()==null) //so 1 elemento
         {
             this.primeiro=null;
             return;
         }
 
         this.primeiro = this.primeiro.getProx();
-        this.primeiro.setAnte(this.primeiro.getAnte().getAnte());
         // System.gc();
     }
     
@@ -177,12 +183,11 @@ public class ListaCircularBidiretiva <X> {
 
         No atual;
         for (atual=this.primeiro;
-             atual.getProx().getProx()!=this.primeiro;
+             atual.getProx().getProx()!=null;
              atual=atual.getProx())
              /*comando vazio*/;
 
-        atual.setProx(this.primeiro);
-        this.primeiro.setAnte(atual);
+        atual.setProx(null);
     }
     
     public int getQuantidade ()
